@@ -70,7 +70,7 @@ public class ProduitService implements ProduitServiceInterface {
             return "Utilisateur non authentifié.";
         }
         String username = authentication.getName();
-        Utilisateur utilisateur = utilisateurRepository.findByUsername(username)
+        Utilisateur utilisateur = utilisateurRepository.findByUsername("samake")
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
         produit.setUtilisateur(utilisateur);
@@ -204,6 +204,14 @@ public class ProduitService implements ProduitServiceInterface {
     public List<Variante> lireVariantes(Long produitId) {
 //        Produit produit = produitRepository.findById(produitId).orElseThrow(() -> new RuntimeException("Produit non trouvé"));
 //        return produit.getVariantes();
+        return null;
+    }
+
+    public List<Produit> lireProduitBySousCategorie(long id) {
+        SousCategory Scategory = this.sousCategorieService.getCategory(id);
+        if (Scategory != null) {
+            return this.produitRepository.findAllBySousCategory(Scategory);
+        }
         return null;
     }
 

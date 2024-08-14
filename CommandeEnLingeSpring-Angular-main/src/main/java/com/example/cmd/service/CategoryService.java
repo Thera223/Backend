@@ -26,9 +26,9 @@ public class CategoryService {
         return categoryRepository.findByLibelle(libelle);
     }
 
-    public Category createCategory(String name) {
-        Category category = new Category();
-        category.setLibelle(name);
+    public Category createCategory(Category category) {
+//        Category category = new Category();
+//        category.setLibelle(name);
         return categoryRepository.save(category);
     }
 

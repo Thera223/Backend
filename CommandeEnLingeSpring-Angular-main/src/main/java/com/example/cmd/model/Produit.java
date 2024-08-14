@@ -27,5 +27,6 @@ public class Produit {
     private Utilisateur utilisateur;
     @ManyToOne
     private SousCategory sousCategory;
-
+    @OneToMany
+    private List<FileInfo> fileInfo;
 }

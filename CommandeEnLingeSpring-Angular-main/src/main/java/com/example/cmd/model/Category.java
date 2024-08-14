@@ -14,4 +14,6 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String libelle;
+    @OneToOne
+    private FileInfo fileInfo;
 }
