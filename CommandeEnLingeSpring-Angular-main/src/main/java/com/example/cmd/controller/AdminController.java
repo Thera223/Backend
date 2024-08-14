@@ -3,6 +3,7 @@ package com.example.cmd.controller;
 import com.example.cmd.DTO.LivraisonRequest;
 import com.example.cmd.model.*;
 import com.example.cmd.repository.CategoryRepository;
+import com.example.cmd.repository.ProductAttributeRepository;
 import com.example.cmd.repository.UtilisateurRepository;
 import com.example.cmd.service.*;
 import jakarta.transaction.Transactional;
@@ -34,6 +35,9 @@ public class AdminController {
 
     @Autowired
     private UtilisateurService utilisateurService;
+
+    @Autowired
+    private ProductAttributeRepository productAttributeRepository;
 
     @Autowired
     private FileInfoService fileInfoService;
@@ -577,7 +581,54 @@ public class AdminController {
         return this.payementService.recupererPayements();
     }
 
+    @PostMapping("/{id}/variants")
+    public ResponseEntity<?> createVariantForSousCategory(
+            @PathVariable("id") Long sousCategoryId,
+            @RequestBody Map<Long, List<String>> attributes) {
+        if (attributes == null || attributes.isEmpty()) {
+            return ResponseEntity.badRequest().body("Les attributs ne peuvent pas être nuls ou vides.");
+        }
 
+        try {
+            Map<ProductAttribute, List<String>> attributesAsProductAttributeMap = convertToProductAttributeMap(attributes);
+            ProductVariant variant = sousCategorieService.createVariantForSousCategory(sousCategoryId, attributesAsProductAttributeMap);
+            return ResponseEntity.ok(variant);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            // Pour gérer d'autres exceptions potentielles
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la création du variant.");
+        }
+    }
+
+    private Map<ProductAttribute, List<String>> convertToProductAttributeMap(Map<Long, List<String>> attributes) {
+        Map<ProductAttribute, List<String>> result = new HashMap<>();
+
+        for (Map.Entry<Long, List<String>> entry : attributes.entrySet()) {
+            Long attributeId = entry.getKey();
+            List<String> values = entry.getValue();
+
+            if (values == null) {
+                values = Collections.emptyList(); // Optionnel : gérer les valeurs nulles en les remplaçant par une liste vide
+            }
+
+            ProductAttribute productAttribute = productAttributeRepository.findById(attributeId)
+                    .orElseThrow(() -> new NoSuchElementException("Attribut produit non trouvé pour ID : " + attributeId));
+
+            result.put(productAttribute, values);
+        }
+
+        return result;
+    }
+    @GetMapping("/{id}/variant")
+    public ResponseEntity<List<ProductVariant>> getVariantsBySousCategory(@PathVariable("id") Long sousCategoryId) {
+        try {
+            List<ProductVariant> variants = sousCategorieService.getVariantsBySousCategory(sousCategoryId);
+            return ResponseEntity.ok(variants);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 
 }
 
