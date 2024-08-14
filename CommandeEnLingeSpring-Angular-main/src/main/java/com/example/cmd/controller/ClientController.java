@@ -219,10 +219,32 @@ public class ClientController {
     }
 
     @PostMapping("/passerCommande")
-    public ResponseEntity<Commande> passerCommandes(@RequestBody List<Produit> produits) {
-        Commande c = this.commandeService.passerCommande(produits);
+    public ResponseEntity<Commande> passerCommandes(
+            @RequestBody List<Produit> produits) {
+
+        // Récupérer l'utilisateur authentifié
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        // Trouver le client par son nom d'utilisateur
+        Client client = clientService.findByUsername(username);
+        if (client == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        // Passer la commande avec les produits
+        Commande c = commandeService.passerCommande(produits);
+
+        // Associer le client à la commande
+        c.setClient(client);
+
+        // Sauvegarder la commande dans la base de données
+        commandeService.saveCommande(c);
+
         return new ResponseEntity<>(c, HttpStatus.CREATED);
     }
+
+
 
     @PostMapping("/effectuerPayement")
     public Payement effectuerPayement(@RequestBody Commande commande) {

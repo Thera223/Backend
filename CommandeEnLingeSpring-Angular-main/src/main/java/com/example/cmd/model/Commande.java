@@ -14,6 +14,11 @@ public class Commande {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private Date date = new Date();
+
+    @ManyToOne
+    @JoinColumn(name = "id_client")
+    private Client client;
+
     @ManyToOne
     private StatuCommande statu;
     @ManyToMany
@@ -26,5 +31,6 @@ public class Commande {
                     name = "produitcommandee_id"
             )
     )
+
     private List<ProduitCommandee> ProduitCommandees = new ArrayList<>();
 }

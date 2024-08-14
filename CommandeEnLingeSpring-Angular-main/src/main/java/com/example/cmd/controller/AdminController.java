@@ -25,6 +25,8 @@ import java.util.Optional;
 @AllArgsConstructor
 public class AdminController {
 
+    @Autowired
+
     private PasswordEncoder passwordEncoder;
 
     @Autowired

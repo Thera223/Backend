@@ -97,4 +97,14 @@ public class ClientService {
     }
 
 
+//    public Client getClientById(Long clientId) {
+//        // Utilisation du repository pour récupérer le client par ID
+//        return clientRepository.findById(clientId)
+//                .orElse(null); // Retourne null si le client n'est pas trouvé
+//    }
+
+    public Client findByUsername(String username) {
+        return clientRepository.findByUsername(username);
+
+    }
 }
