@@ -1,15 +1,13 @@
 package com.example.cmd.controller;
 
-import com.example.cmd.DTO.AvisDTO;
-import com.example.cmd.DTO.ChangePasswordDto;
-import com.example.cmd.DTO.CreateClientDto;
-import com.example.cmd.DTO.LivraisonRequest;
+import com.example.cmd.DTO.*;
 import com.example.cmd.config.CustomUserPrincipal;
 import com.example.cmd.model.*;
 import com.example.cmd.service.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -213,8 +211,8 @@ public class ClientController {
     }
 
     // Endpoint pour obtenir tous les produits
-    @GetMapping(path = "/listesProduit")
-    public List<Produit> lireProduits() {
+    @GetMapping(path = "/listesProduit", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_JPEG_VALUE})
+    public List<ProduitDto> lireProduits() {
         return produitService.lireProduits();
     }
 
@@ -256,7 +254,7 @@ public class ClientController {
     }
 
     @GetMapping("/categories")
-    public ResponseEntity<List<Category>> getAllCategories() {
+    public ResponseEntity<List<CategoryDto>> getAllCategories() {
         return new ResponseEntity<>(categoryService.getAllCategories(), HttpStatus.OK);
     }
 

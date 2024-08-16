@@ -1,6 +1,8 @@
 package com.example.cmd.controller;
 
+import com.example.cmd.DTO.CategoryDto;
 import com.example.cmd.DTO.LivraisonRequest;
+import com.example.cmd.DTO.ProduitDto;
 import com.example.cmd.model.*;
 import com.example.cmd.repository.CategoryRepository;
 import com.example.cmd.repository.ProductAttributeRepository;
@@ -9,6 +11,8 @@ import com.example.cmd.service.*;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -29,9 +33,13 @@ import java.util.*;
 @RestController
 @RequestMapping("/admin")
 @AllArgsConstructor
+@CrossOrigin(origins = "http://localhost:8100")
 public class AdminController {
 
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    FilesStorageService storageService;
 
     @Autowired
     private UtilisateurService utilisateurService;
@@ -270,8 +278,9 @@ public class AdminController {
     }
 
     @GetMapping("/categories")
-    public ResponseEntity<List<Category>> getAllCategories() {
-        return new ResponseEntity<>(categoryService.getAllCategories(), HttpStatus.OK);
+    public ResponseEntity<List<CategoryDto>> getAllCategories() {
+        List<CategoryDto> CategoryList = categoryService.getAllCategories();
+        return new ResponseEntity<>(CategoryList, HttpStatus.OK);
     }
 
     @GetMapping("/categories/{id}")
@@ -353,7 +362,7 @@ public class AdminController {
     }
 
     @PostMapping(path = "/Creerproduit", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> ajouterProduit(@RequestParam("files") MultipartFile[] files, Produit produit) throws IOException {
+    public ResponseEntity<String> ajouterProduit(@RequestParam("files") MultipartFile files, Produit produit) throws IOException {
         List<FileInfo> fileInfos = new ArrayList<>();
 
         // récuperer le path du dossier
@@ -418,13 +427,41 @@ public class AdminController {
     }
 
     // Endpoint pour obtenir tous les produits
-    @GetMapping(path = "/listesProduit")
-    public List<Produit> lireProduits() {
+    @GetMapping(path = "/listesProduit", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_JPEG_VALUE})
+    public List<ProduitDto> lireProduits() {
+//        List<ProduitDto> produitDtoList = new ArrayList<>();
+//        List<String> fileInfoImages = new ArrayList<>();
+//        List<Produit> produits = produitService.lireProduits();
+//        for (Produit produit : produits) {
+//            List<FileInfo> fileInfos = new ArrayList<>();
+//            ProduitDto produitDto = new ProduitDto();
+//            produitDto.setId(produit.getId());
+//            produitDto.setLibelle(produit.getLibelle());
+//            produitDto.setQuantite(produit.getQuantite());
+//            produitDto.setDescription(produit.getDescription());
+//            produitDto.setSousCategory(produit.getSousCategory());
+//
+//            fileInfos = produit.getFileInfo();
+//            for (FileInfo fileInfo : fileInfos) {
+//                String imagePath = String.format("http://localhost:8080/admin/files/"+fileInfo.getName());
+//                fileInfoImages.add(imagePath);
+//            }
+//            produitDto.setImages(fileInfoImages);
+//            produitDtoList.add(produitDto);
+//        }
         return produitService.lireProduits();
     }
 
+    //endpoint pour télecharger une image par son nom
+    @GetMapping(path = {"/files/{filename:.+}"}, produces = {MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_JPEG_VALUE})
+    public ResponseEntity<Resource> getFile(@PathVariable String filename) {
+        Resource file = storageService.load(filename);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"").body(file);
+    }
+
     @GetMapping(path = "/lireProduitBySousCategorie/{id}")
-    public List<Produit> lireProduitBySousCategorie(@PathVariable long id) {
+    public List<ProduitDto> lireProduitBySousCategorie(@PathVariable long id) {
         return produitService.lireProduitBySousCategorie(id);
     }
 
