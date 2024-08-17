@@ -192,12 +192,13 @@ public class ProduitService implements ProduitServiceInterface {
     @Override
     public List<ProduitDto> lireProduits() {
         List<ProduitDto> produitDtoList = new ArrayList<>();
-        List<String> fileInfoImages = new ArrayList<>();
         List<Produit> produits = produitRepository.findAll();
         for (Produit produit : produits) {
             List<FileInfo> fileInfos = new ArrayList<>();
+            List<String> fileInfoImages = new ArrayList<>();
             ProduitDto produitDto = new ProduitDto();
             produitDto.setId(produit.getId());
+            produitDto.setPrix(produit.getPrix());
             produitDto.setLibelle(produit.getLibelle());
             produitDto.setQuantite(produit.getQuantite());
             produitDto.setDescription(produit.getDescription());
@@ -233,14 +234,15 @@ public class ProduitService implements ProduitServiceInterface {
         SousCategory Scategory = this.sousCategorieService.getCategory(id);
         if (Scategory != null) {
             List<ProduitDto> produitDtoList = new ArrayList<>();
-            List<String> fileInfoImages = new ArrayList<>();
             List<Produit> produits = this.produitRepository.findAllBySousCategory(Scategory);
             for (Produit produit : produits) {
                 List<FileInfo> fileInfos = new ArrayList<>();
+                List<String> fileInfoImages = new ArrayList<>();
                 ProduitDto produitDto = new ProduitDto();
                 produitDto.setId(produit.getId());
                 produitDto.setLibelle(produit.getLibelle());
                 produitDto.setQuantite(produit.getQuantite());
+                produitDto.setPrix(produit.getPrix());
                 produitDto.setDescription(produit.getDescription());
                 produitDto.setSousCategory(produit.getSousCategory());
 

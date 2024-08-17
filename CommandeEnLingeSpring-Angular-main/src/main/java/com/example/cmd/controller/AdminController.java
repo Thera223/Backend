@@ -128,8 +128,6 @@ public class AdminController {
     }
 
     // Endpoints pour les utilisateurs
-
-
     @PostMapping("/creeradmin")
     public ResponseEntity<String> ajouterAdmin(@RequestBody Admin admin, Authentication authentication) {
         String currentUserRole = authentication.getAuthorities().iterator().next().getAuthority();
@@ -429,26 +427,6 @@ public class AdminController {
     // Endpoint pour obtenir tous les produits
     @GetMapping(path = "/listesProduit", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_JPEG_VALUE})
     public List<ProduitDto> lireProduits() {
-//        List<ProduitDto> produitDtoList = new ArrayList<>();
-//        List<String> fileInfoImages = new ArrayList<>();
-//        List<Produit> produits = produitService.lireProduits();
-//        for (Produit produit : produits) {
-//            List<FileInfo> fileInfos = new ArrayList<>();
-//            ProduitDto produitDto = new ProduitDto();
-//            produitDto.setId(produit.getId());
-//            produitDto.setLibelle(produit.getLibelle());
-//            produitDto.setQuantite(produit.getQuantite());
-//            produitDto.setDescription(produit.getDescription());
-//            produitDto.setSousCategory(produit.getSousCategory());
-//
-//            fileInfos = produit.getFileInfo();
-//            for (FileInfo fileInfo : fileInfos) {
-//                String imagePath = String.format("http://localhost:8080/admin/files/"+fileInfo.getName());
-//                fileInfoImages.add(imagePath);
-//            }
-//            produitDto.setImages(fileInfoImages);
-//            produitDtoList.add(produitDto);
-//        }
         return produitService.lireProduits();
     }
 
