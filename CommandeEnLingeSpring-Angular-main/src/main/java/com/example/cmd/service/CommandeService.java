@@ -35,26 +35,26 @@ public class CommandeService {
         return this.commandeRepository.save(commande);
     }
     @Transactional
-    public Commande passerCommande(List<Produit> produits) {
+    public Commande passerCommande(List<ProduitCommandee> produitCommandeeList) {
         // Création de nouvelle commande.
         Commande commande = new Commande();
         // Initialisation du montant.
         float total = 0;
         // Création d'une nouvelle liste de produits commandés.
-        List<ProduitCommandee> produitCommandeeList = new ArrayList<>();
+        List<ProduitCommandee> productCommandline = new ArrayList<>();
         // Parcourir la liste des produits pour calculer le montant et créer des commandes pour chaque produit.
-        for (Produit p : produits) {
-            total += p.getPrix() * p.getQuantite();
-            ProduitCommandee pCommandee = new ProduitCommandee();
-            Produit produit = this.produitRepository.findById(p.getId())
+        for (ProduitCommandee pCommandee : produitCommandeeList) {
+            total += pCommandee.getProduit().getPrix() * pCommandee.getQuantite();
+            Produit produit = this.produitRepository.findById(pCommandee.getProduit().getId())
                     .orElseThrow(() -> new RuntimeException("Produit non trouvé"));
-            pCommandee.setProduit(produit);
-            pCommandee.setQuantite(p.getQuantite());
-            ProduitCommandee pCommandeeInDB = this.produitCommandeeService.creer(pCommandee);
-            produitCommandeeList.add(pCommandeeInDB);
+            ProduitCommandee pCommandeeInDB = this.produitCommandeeService.getProduitCommandeeById(pCommandee.getId());
+            if (pCommandeeInDB == null) {
+                pCommandeeInDB = this.produitCommandeeService.creer(pCommandee);
+            }
+            productCommandline.add(pCommandeeInDB);
         }
 
-        commande.setProduitCommandees(produitCommandeeList);
+        commande.setProduitCommandees(productCommandline);
 
         StatuCommande statutEnAttente = this.statuCommandeService.recupererStatusCommande("en_attente");
         commande.setStatu(statutEnAttente);
@@ -71,7 +71,7 @@ public class CommandeService {
     public Commande passerCommandeViaPanier(Long id_panier) {
         Panier panier = panierRepository.findById(id_panier)
                 .orElseThrow(() -> new IllegalArgumentException("Panier non trouvé avec id : " + id_panier));
-        List<Produit> produits = panier.getProduits();
+        List<ProduitCommandee> produits = panier.getProduits();
         if (produits.isEmpty()) {
             throw new RuntimeException("Ce panier ne contient aucun produit !!!");
         }

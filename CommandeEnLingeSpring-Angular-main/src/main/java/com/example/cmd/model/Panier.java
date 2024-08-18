@@ -24,12 +24,12 @@ public class Panier {
             joinColumns = @JoinColumn(name = "panier_id"),
             inverseJoinColumns = @JoinColumn(name = "produit_id")
     )
-    private List<Produit> produits = new ArrayList<>();
+    private List<ProduitCommandee> produits = new ArrayList<>();
 
 
 
-    public void ajouterProduit(Produit produit, int quantite) {
-        for (Produit p : produits) {
+    public void ajouterProduit(ProduitCommandee produit, int quantite) {
+        for (ProduitCommandee p : produits) {
             if (p.getId().equals(produit.getId())) {
                 p.setQuantite(p.getQuantite() + quantite);
                 return;
@@ -44,7 +44,7 @@ public class Panier {
 
 
     public void modifierQuantiteProduit(Long produitId, int nouvelleQuantite) {
-        for (Produit produit : produits) {
+        for (ProduitCommandee produit : produits) {
             if (produit.getId().equals(produitId)) {
                 produit.setQuantite(nouvelleQuantite);
                 this.total = getTotal();
@@ -65,7 +65,7 @@ public class Panier {
 
     public float getTotal() {
         return (float) produits.stream()
-                .mapToDouble(p -> p.getPrix() * p.getQuantite())
+                .mapToDouble(p -> p.getProduit().getPrix() * p.getQuantite())
                 .sum();
     }
 

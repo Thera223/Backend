@@ -179,8 +179,8 @@ public class ClientController {
     // Afficher tous les produits dans le Panier
 
     @GetMapping("/{panierId}/produits")
-    public ResponseEntity<List<Produit>> getAllProduitsInPanier(@PathVariable Long panierId) {
-        List<Produit> produits = panierService.getAllProduitsInPanier(panierId);
+    public ResponseEntity<List<ProduitCommandee>> getAllProduitsInPanier(@PathVariable Long panierId) {
+        List<ProduitCommandee> produits = panierService.getAllProduitsInPanier(panierId);
         return new ResponseEntity<>(produits, HttpStatus.OK);
     }
 
@@ -218,7 +218,7 @@ public class ClientController {
 
     @PostMapping("/passerCommande")
     public ResponseEntity<Commande> passerCommandes(
-            @RequestBody List<Produit> produits) {
+            @RequestBody List<ProduitCommandee> produits) {
 
         // Récupérer l'utilisateur authentifié
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
