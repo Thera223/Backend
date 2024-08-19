@@ -300,4 +300,22 @@ public class ClientController {
                 .body("Livraison ajoutée et statut mis à jour à 'en_cours'.");
     }
 
+    // Endpoint pour récupérer les commandes d'un client spécifique
+    @GetMapping("/commandes/{clientId}")
+    public ResponseEntity<List<Commande>> getCommandesByClientId(@PathVariable Long clientId) {
+        List<Commande> commandes = commandeService.getCommandesByClientId(clientId);
+        if (commandes.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.ok(commandes);
+        }
+    }
+
+// Endpoint pour récupérer les payements d'un client spécifique
+    @GetMapping("/paiements/client/{clientId}")
+    public ResponseEntity<List<Payement>> getPayementsByClient(@PathVariable Long clientId) {
+        List<Payement> paiements = payementService.getPayementsByClientId(clientId);
+        return ResponseEntity.ok(paiements);
+    }
+
 }

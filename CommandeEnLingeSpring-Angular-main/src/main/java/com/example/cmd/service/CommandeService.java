@@ -130,4 +130,9 @@ public class CommandeService {
         return this.commandeRepository.findAll();
     }
 
+    // Nouvelle méthode pour récupérer les commandes d'un client spécifique
+    public List<Commande> getCommandesByClientId(Long clientId) {
+        return commandeRepository.findByClientId(clientId);
+    }
+
 }
