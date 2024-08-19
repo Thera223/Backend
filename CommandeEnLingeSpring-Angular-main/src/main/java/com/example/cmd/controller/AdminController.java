@@ -353,7 +353,7 @@ public class AdminController {
     }
 
     @PostMapping(path = "/Creerproduit", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> ajouterProduit(@RequestParam("files") MultipartFile[] files, Produit produit) throws IOException {
+    public ResponseEntity<String> ajouterProduit(@RequestParam("files") MultipartFile files, Produit produit) throws IOException {
         List<FileInfo> fileInfos = new ArrayList<>();
 
         // récuperer le path du dossier
