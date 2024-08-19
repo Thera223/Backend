@@ -58,4 +58,8 @@ public class PayementService {
     public List<Payement> recupererPayements() {
         return this.payementRepository.findAll();
     }
+
+    public List<Payement> getPayementsByClientId(Long clientId) {
+        return payementRepository.findByCommande_Client_Id(clientId);
+    }
 }

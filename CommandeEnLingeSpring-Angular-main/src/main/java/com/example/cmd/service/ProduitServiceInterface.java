@@ -8,6 +8,8 @@ import jakarta.transaction.Transactional;
 import java.util.List;
 
 public interface ProduitServiceInterface {
+
+    Produit getProduitById(Long id);
     @Transactional
     Object ajouterProduit(Produit produit);
 

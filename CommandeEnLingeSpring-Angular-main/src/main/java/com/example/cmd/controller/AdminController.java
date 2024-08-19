@@ -645,6 +645,12 @@ public class AdminController {
         }
     }
 
+    @GetMapping("produit/{id}")
+    public ResponseEntity<Produit> getProduitById(@PathVariable Long id) {
+        Produit produit = produitService.getProduitById(id);
+        return ResponseEntity.ok(produit);
+    }
+
 }
 
 

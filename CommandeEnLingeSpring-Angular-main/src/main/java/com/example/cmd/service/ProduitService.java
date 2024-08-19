@@ -1,6 +1,7 @@
 package com.example.cmd.service;
 
 import com.example.cmd.DTO.ProduitDto;
+import com.example.cmd.exceptions.ResourceNotFoundException;
 import com.example.cmd.model.*;
 import com.example.cmd.repository.CategoryRepository;
 import com.example.cmd.repository.ProduitRepository;
@@ -259,5 +260,23 @@ public class ProduitService implements ProduitServiceInterface {
         return null;
     }
 
+    @Override
+    public Produit getProduitById(Long id) {
 
+        Optional<Produit> produit = produitRepository.findById(id);
+        if (produit.isPresent()) {
+            Produit produit1 = produit.get();
+            List<FileInfo> fileInfos = new ArrayList<>();
+            fileInfos = produit1.getFileInfo();
+            for (FileInfo fileInfo : fileInfos) {
+                String imagePath = String.format("http://localhost:8080/admin/files/"+fileInfo.getName());
+                fileInfo.setUrl(imagePath);
+            }
+            produit1.setFileInfo(fileInfos);
+
+            return produit1;
+        } else {
+            throw new ResourceNotFoundException("Produit non trouvé avec l'ID : " + id);
+        }
+    }
 }
