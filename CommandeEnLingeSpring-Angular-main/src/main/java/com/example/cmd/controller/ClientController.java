@@ -1,15 +1,13 @@
 package com.example.cmd.controller;
 
-import com.example.cmd.DTO.AvisDTO;
-import com.example.cmd.DTO.ChangePasswordDto;
-import com.example.cmd.DTO.CreateClientDto;
-import com.example.cmd.DTO.LivraisonRequest;
+import com.example.cmd.DTO.*;
 import com.example.cmd.config.CustomUserPrincipal;
 import com.example.cmd.model.*;
 import com.example.cmd.service.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -181,8 +179,8 @@ public class ClientController {
     // Afficher tous les produits dans le Panier
 
     @GetMapping("/{panierId}/produits")
-    public ResponseEntity<List<Produit>> getAllProduitsInPanier(@PathVariable Long panierId) {
-        List<Produit> produits = panierService.getAllProduitsInPanier(panierId);
+    public ResponseEntity<List<ProduitCommandee>> getAllProduitsInPanier(@PathVariable Long panierId) {
+        List<ProduitCommandee> produits = panierService.getAllProduitsInPanier(panierId);
         return new ResponseEntity<>(produits, HttpStatus.OK);
     }
 
@@ -213,16 +211,37 @@ public class ClientController {
     }
 
     // Endpoint pour obtenir tous les produits
-    @GetMapping(path = "/listesProduit")
-    public List<Produit> lireProduits() {
+    @GetMapping(path = "/listesProduit", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_JPEG_VALUE})
+    public List<ProduitDto> lireProduits() {
         return produitService.lireProduits();
     }
 
     @PostMapping("/passerCommande")
-    public ResponseEntity<Commande> passerCommandes(@RequestBody List<Produit> produits) {
-        Commande c = this.commandeService.passerCommande(produits);
+    public ResponseEntity<Commande> passerCommandes(
+            @RequestBody List<ProduitCommandee> produits) {
+
+        // Récupérer l'utilisateur authentifié
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        // Trouver le client par son nom d'utilisateur
+        Client client = clientService.findByUsername(username);
+        if (client == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        // Passer la commande avec les produits
+        Commande c = commandeService.passerCommande(produits);
+
+        // Associer le client à la commande
+        c.setClient(client);
+
+        // Sauvegarder la commande dans la base de données
+        commandeService.saveCommande(c);
+
         return new ResponseEntity<>(c, HttpStatus.CREATED);
     }
+
 
     @PostMapping("/effectuerPayement")
     public Payement effectuerPayement(@RequestBody Commande commande) {
@@ -235,7 +254,7 @@ public class ClientController {
     }
 
     @GetMapping("/categories")
-    public ResponseEntity<List<Category>> getAllCategories() {
+    public ResponseEntity<List<CategoryDto>> getAllCategories() {
         return new ResponseEntity<>(categoryService.getAllCategories(), HttpStatus.OK);
     }
 

@@ -27,4 +27,8 @@ public class Commande {
             )
     )
     private List<ProduitCommandee> ProduitCommandees = new ArrayList<>();
+
+    @ManyToOne
+    @JoinColumn(name = "id_client")
+    private Client client;
 }

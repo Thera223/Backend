@@ -1,14 +1,20 @@
 package com.example.cmd.controller;
 
+import com.example.cmd.DTO.CategoryDto;
 import com.example.cmd.DTO.LivraisonRequest;
+import com.example.cmd.DTO.ProduitDto;
 import com.example.cmd.model.*;
 import com.example.cmd.repository.CategoryRepository;
+import com.example.cmd.repository.ProductAttributeRepository;
 import com.example.cmd.repository.UtilisateurRepository;
 import com.example.cmd.service.*;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -16,19 +22,33 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
 
 @RestController
 @RequestMapping("/admin")
 @AllArgsConstructor
+@CrossOrigin(origins = "http://localhost:8100")
 public class AdminController {
 
     private PasswordEncoder passwordEncoder;
 
     @Autowired
+    FilesStorageService storageService;
+
+    @Autowired
     private UtilisateurService utilisateurService;
+
+    @Autowired
+    private ProductAttributeRepository productAttributeRepository;
+
+    @Autowired
+    private FileInfoService fileInfoService;
 
     @Autowired
     private TypeLivraisonService typeLivraisonService;
@@ -108,8 +128,6 @@ public class AdminController {
     }
 
     // Endpoints pour les utilisateurs
-
-
     @PostMapping("/creeradmin")
     public ResponseEntity<String> ajouterAdmin(@RequestBody Admin admin, Authentication authentication) {
         String currentUserRole = authentication.getAuthorities().iterator().next().getAuthority();
@@ -220,16 +238,47 @@ public class AdminController {
 
     // Endpoints pour les catégories
 
-    @PostMapping("/categories")
+    @PostMapping(path = "/categories", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Category> createCategory(@RequestParam("files") MultipartFile file, @RequestParam("libelle") String libelle) throws IOException {
+        Category category = new Category();
+        // récuperer le path du dossier
+        Path path_du_dossier = Paths.get("images_du_projet");
 
-    public ResponseEntity<Category> createCategory(@RequestParam("libelle") String libelle) {
-        Category createdCategory = categoryService.createCategory(libelle);
+        // vérifier si le dossier n'existe pas, le créer.
+        if (!Files.exists(path_du_dossier)) {
+            Files.createDirectory(path_du_dossier);
+        }
+
+        try {
+            // créer un path pour le fichier passé en parametre: << MultipartFile file >> en gardant le nom original.
+
+            Path path_du_fichier = path_du_dossier.resolve(file.getOriginalFilename());
+
+            // créer le fichier
+            Files.copy(file.getInputStream(), path_du_fichier);
+
+            // Créer un fileInfo
+            FileInfo fileInfo = new FileInfo();
+            fileInfo.setName(file.getOriginalFilename());
+            fileInfo.setUrl(path_du_fichier.toUri().toString());
+            // stocker fileInfo dans la base.
+            FileInfo fileInfoInDB = this.fileInfoService.creer(fileInfo);
+            // lier les fileInfos au category
+            category.setLibelle(libelle);
+            category.setFileInfo(fileInfoInDB);
+        } catch (Exception e) {
+            // en cas d'erreur renvoyer le message (lever une exception).
+            throw new RuntimeException("Echec. Erreur: " + e.getMessage());
+        }
+
+        Category createdCategory = categoryService.createCategory(category);
         return new ResponseEntity<>(createdCategory, HttpStatus.CREATED);
     }
 
     @GetMapping("/categories")
-    public ResponseEntity<List<Category>> getAllCategories() {
-        return new ResponseEntity<>(categoryService.getAllCategories(), HttpStatus.OK);
+    public ResponseEntity<List<CategoryDto>> getAllCategories() {
+        List<CategoryDto> CategoryList = categoryService.getAllCategories();
+        return new ResponseEntity<>(CategoryList, HttpStatus.OK);
     }
 
     @GetMapping("/categories/{id}")
@@ -260,9 +309,12 @@ public class AdminController {
 
     // Endpoints pour les sous-catégories
 
-    @PostMapping("/sous-categorie")
-    public ResponseEntity<SousCategory> createCategory(@RequestBody SousCategory sousCategory) {
-        SousCategory createdsousCategory = sousCategorieService.createSousCategory(sousCategory);
+    @PostMapping(path = "/sous-categorie")
+    public ResponseEntity<SousCategory> createCategory(@RequestBody SousCategory sousCategory) throws IOException {
+        SousCategory sCate = new SousCategory();
+        sCate.setCategory(sousCategory.getCategory());
+        sCate.setLibelle(sousCategory.getLibelle());
+        SousCategory createdsousCategory = sousCategorieService.createSousCategory(sCate);
         return new ResponseEntity<>(createdsousCategory, HttpStatus.CREATED);
     }
 
@@ -307,21 +359,44 @@ public class AdminController {
         return new ResponseEntity<>("Catégorie supprimée avec succès!", HttpStatus.OK);
     }
 
-    @PostMapping(value = "/Creerproduit", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<String> ajouterProduit(@RequestBody Produit produit) {
-        try {
-            // Récupérer l'utilisateur connecté
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication == null || !authentication.isAuthenticated()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Utilisateur non authentifié.");
+    @PostMapping(path = "/Creerproduit", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> ajouterProduit(@RequestParam("files") MultipartFile files, Produit produit) throws IOException {
+        List<FileInfo> fileInfos = new ArrayList<>();
+
+        // récuperer le path du dossier
+        Path path_du_dossier = Paths.get("images_du_projet");
+
+        // vérifier si le dossier n'existe pas, le créer.
+        if (!Files.exists(path_du_dossier)) {
+            Files.createDirectory(path_du_dossier);
+        }
+
+         //parcourrir la liste des fichiers passés en parametre: << MultipartFile[] files >>
+        Arrays.asList(files).stream().forEach(file -> {
+            try {
+                // créer un path pour chaque fichier en gardant le nom original.
+                Path path_du_fichier = path_du_dossier.resolve(file.getOriginalFilename());
+
+                // créer le fichier
+                Files.copy(file.getInputStream(), path_du_fichier);
+
+                // Créer un fileInfo
+                FileInfo fileInfo = new FileInfo();
+                fileInfo.setName(file.getOriginalFilename());
+                fileInfo.setUrl(path_du_fichier.toUri().toString());
+                // stocker fileInfo dans la base.
+                FileInfo fileInfoInDB = this.fileInfoService.creer(fileInfo);
+                fileInfos.add(fileInfoInDB);
+            } catch (Exception e) {
+                // en cas d'erreur renvoyer le message (lever une exception).
+                throw new RuntimeException("Echec. Erreur: " + e.getMessage());
             }
+        });
 
-            String username = authentication.getName();
-            Utilisateur utilisateur = utilisateurRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+        // lier les fileInfos au produit
+        produit.setFileInfo(fileInfos);
 
-            produit.setUtilisateur(utilisateur);
-
+        try {
             // Ajouter le produit
             String resultat = (String) produitService.ajouterProduit(produit);
 
@@ -350,9 +425,22 @@ public class AdminController {
     }
 
     // Endpoint pour obtenir tous les produits
-    @GetMapping(path = "/listesProduit")
-    public List<Produit> lireProduits() {
+    @GetMapping(path = "/listesProduit", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_JPEG_VALUE})
+    public List<ProduitDto> lireProduits() {
         return produitService.lireProduits();
+    }
+
+    //endpoint pour télecharger une image par son nom
+    @GetMapping(path = {"/files/{filename:.+}"}, produces = {MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_JPEG_VALUE})
+    public ResponseEntity<Resource> getFile(@PathVariable String filename) {
+        Resource file = storageService.load(filename);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"").body(file);
+    }
+
+    @GetMapping(path = "/lireProduitBySousCategorie/{id}")
+    public List<ProduitDto> lireProduitBySousCategorie(@PathVariable long id) {
+        return produitService.lireProduitBySousCategorie(id);
     }
 
     // Endpoint pour les Avis concernant les produit
@@ -508,7 +596,54 @@ public class AdminController {
         return this.payementService.recupererPayements();
     }
 
+    @PostMapping("/{id}/variants")
+    public ResponseEntity<?> createVariantForSousCategory(
+            @PathVariable("id") Long sousCategoryId,
+            @RequestBody Map<Long, List<String>> attributes) {
+        if (attributes == null || attributes.isEmpty()) {
+            return ResponseEntity.badRequest().body("Les attributs ne peuvent pas être nuls ou vides.");
+        }
 
+        try {
+            Map<ProductAttribute, List<String>> attributesAsProductAttributeMap = convertToProductAttributeMap(attributes);
+            ProductVariant variant = sousCategorieService.createVariantForSousCategory(sousCategoryId, attributesAsProductAttributeMap);
+            return ResponseEntity.ok(variant);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            // Pour gérer d'autres exceptions potentielles
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la création du variant.");
+        }
+    }
+
+    private Map<ProductAttribute, List<String>> convertToProductAttributeMap(Map<Long, List<String>> attributes) {
+        Map<ProductAttribute, List<String>> result = new HashMap<>();
+
+        for (Map.Entry<Long, List<String>> entry : attributes.entrySet()) {
+            Long attributeId = entry.getKey();
+            List<String> values = entry.getValue();
+
+            if (values == null) {
+                values = Collections.emptyList(); // Optionnel : gérer les valeurs nulles en les remplaçant par une liste vide
+            }
+
+            ProductAttribute productAttribute = productAttributeRepository.findById(attributeId)
+                    .orElseThrow(() -> new NoSuchElementException("Attribut produit non trouvé pour ID : " + attributeId));
+
+            result.put(productAttribute, values);
+        }
+
+        return result;
+    }
+    @GetMapping("/{id}/variant")
+    public ResponseEntity<List<ProductVariant>> getVariantsBySousCategory(@PathVariable("id") Long sousCategoryId) {
+        try {
+            List<ProductVariant> variants = sousCategorieService.getVariantsBySousCategory(sousCategoryId);
+            return ResponseEntity.ok(variants);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 
 }
 

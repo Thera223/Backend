@@ -51,6 +51,11 @@ public class ClientService {
         return client;
     }
 
+    public Client findByUsername(String username) {
+        return clientRepository.findByUsername(username);
+
+    }
+
 
     public Client ajouterClient(CreateClientDto dto) {
         Client client = convertirDtoEnEntite(dto);

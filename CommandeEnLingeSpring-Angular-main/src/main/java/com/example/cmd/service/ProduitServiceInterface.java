@@ -1,5 +1,6 @@
 package com.example.cmd.service;
 
+import com.example.cmd.DTO.ProduitDto;
 import com.example.cmd.model.Produit;
 import com.example.cmd.model.Variante;
 import jakarta.transaction.Transactional;
@@ -20,7 +21,7 @@ public interface ProduitServiceInterface {
 
     String supprimerProduit(Long id);
 
-    List<Produit> lireProduits();
+    List<ProduitDto> lireProduits();
 
     List<Variante> lireVariantes(Long produitId);
 }

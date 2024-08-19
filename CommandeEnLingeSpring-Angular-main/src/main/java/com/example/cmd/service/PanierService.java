@@ -1,9 +1,6 @@
 package com.example.cmd.service;
 
-import com.example.cmd.model.Commande;
-import com.example.cmd.model.Facture;
-import com.example.cmd.model.Panier;
-import com.example.cmd.model.Produit;
+import com.example.cmd.model.*;
 import com.example.cmd.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
@@ -21,6 +18,7 @@ public class PanierService {
     private final ProduitRepository produitRepository;
     private final CommandeRepository commandeRepository;
     private final FactureRepository factureRepository;
+    private final ProduitCommandeeService produitCommandeeService;
     private StatuCommandeService statuCommandeService;
 
     public String supprimerPanier(Long id) {
@@ -28,6 +26,7 @@ public class PanierService {
         return "Panier supprimé avec succès!";
     }
 
+    @Transactional(Transactional.TxType.REQUIRED)
     public Panier ajouterProduitAuPanier(Long clientId, Long produitId, int quantite) {
         Panier panier = panierRepository.findByClient_Id(clientId);
         if (panier == null) {
@@ -37,7 +36,11 @@ public class PanierService {
         }
 
         Produit produit = produitRepository.findById(produitId).orElseThrow(() -> new IllegalArgumentException("Produit non trouvé"));
-        panier.getProduits().add(produit);
+        ProduitCommandee produitCommandee = new ProduitCommandee();
+        produitCommandee.setProduit(produit);
+        produitCommandee.setQuantite(quantite);
+        ProduitCommandee produitCommandeeInDB = produitCommandeeService.creer(produitCommandee);
+        panier.getProduits().add(produitCommandeeInDB);
         panier.setTotal(panier.getTotal());
         panierRepository.save(panier);
         return panier;
@@ -50,6 +53,7 @@ public class PanierService {
         return panierRepository.save(panier);
     }
 
+    @Transactional
     public Panier supprimerProduitDuPanier(Long panierId, Long produitId) {
         Panier panier = panierRepository.findById(panierId)
                 .orElseThrow(() -> new IllegalArgumentException("Panier non trouvé avec id : " + panierId));
@@ -68,10 +72,10 @@ public class PanierService {
 
         float montantRestant = montantClient - panier.getTotal();
 
-        for (Produit produit : panier.getProduits()) {
+        for (ProduitCommandee produit : panier.getProduits()) {
             Produit p = produitRepository.findById(produit.getId()).orElseThrow(() -> new RuntimeException("Produit non trouvé"));
             if (p.getQuantite() < produit.getQuantite()) {
-                return "Quantité insuffisante pour le produit : " + produit.getLibelle();
+                return "Quantité insuffisante pour le produit : " + produit.getId();
             }
             p.setQuantite(p.getQuantite() - produit.getQuantite());
             produitRepository.save(p);
@@ -96,9 +100,20 @@ public class PanierService {
         return panierRepository.findById(panierId).orElse(null);
     }
 
-    public List<Produit> getAllProduitsInPanier(Long panierId) {
+    public List<ProduitCommandee> getAllProduitsInPanier(Long panierId) {
         Panier panier = panierRepository.findById(panierId).orElseThrow(() -> new RuntimeException("Panier non trouvé"));
-        return panier.getProduits();
+        List<ProduitCommandee> produitCommandeeList = new ArrayList<>();
+        for (ProduitCommandee produitCommandee : panier.getProduits()) {
+            List<FileInfo> fileInfos = new ArrayList<>();
+            fileInfos = produitCommandee.getProduit().getFileInfo();
+            for (FileInfo fileInfo : fileInfos) {
+                String imagePath = String.format("http://localhost:8080/admin/files/"+fileInfo.getName());
+                fileInfo.setUrl(imagePath);
+            }
+            produitCommandee.getProduit().setFileInfo(fileInfos);
+            produitCommandeeList.add(produitCommandee);
+        }
+        return produitCommandeeList;
     }
 
     public Produit getProduitByIdInPanier(Long panierId, Long produitId) {
@@ -107,8 +122,8 @@ public class PanierService {
             throw new RuntimeException("Panier non trouvé");
         }
         return panier.getProduits().stream()
-                .filter(produit -> produit.getId().equals(produitId))
+                .filter(produit -> produit.getProduit().getId().equals(produitId))
                 .findFirst()
-                .orElse(null);
+                .orElse(null).getProduit();
     }
 }

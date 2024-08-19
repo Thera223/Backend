@@ -1,5 +1,6 @@
 package com.example.cmd.service;
 
+import com.example.cmd.DTO.ProduitDto;
 import com.example.cmd.model.*;
 import com.example.cmd.repository.CategoryRepository;
 import com.example.cmd.repository.ProduitRepository;
@@ -10,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -70,7 +72,7 @@ public class ProduitService implements ProduitServiceInterface {
             return "Utilisateur non authentifié.";
         }
         String username = authentication.getName();
-        Utilisateur utilisateur = utilisateurRepository.findByUsername(username)
+        Utilisateur utilisateur = utilisateurRepository.findByUsername("samake")
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
         produit.setUtilisateur(utilisateur);
@@ -188,8 +190,29 @@ public class ProduitService implements ProduitServiceInterface {
 
 
     @Override
-    public List<Produit> lireProduits() {
-        return produitRepository.findAll();
+    public List<ProduitDto> lireProduits() {
+        List<ProduitDto> produitDtoList = new ArrayList<>();
+        List<Produit> produits = produitRepository.findAll();
+        for (Produit produit : produits) {
+            List<FileInfo> fileInfos = new ArrayList<>();
+            List<String> fileInfoImages = new ArrayList<>();
+            ProduitDto produitDto = new ProduitDto();
+            produitDto.setId(produit.getId());
+            produitDto.setPrix(produit.getPrix());
+            produitDto.setLibelle(produit.getLibelle());
+            produitDto.setQuantite(produit.getQuantite());
+            produitDto.setDescription(produit.getDescription());
+            produitDto.setSousCategory(produit.getSousCategory());
+
+            fileInfos = produit.getFileInfo();
+            for (FileInfo fileInfo : fileInfos) {
+                String imagePath = String.format("http://localhost:8080/admin/files/"+fileInfo.getName());
+                fileInfoImages.add(imagePath);
+            }
+            produitDto.setImages(fileInfoImages);
+            produitDtoList.add(produitDto);
+        }
+        return produitDtoList;
     }
 
 
@@ -204,6 +227,35 @@ public class ProduitService implements ProduitServiceInterface {
     public List<Variante> lireVariantes(Long produitId) {
 //        Produit produit = produitRepository.findById(produitId).orElseThrow(() -> new RuntimeException("Produit non trouvé"));
 //        return produit.getVariantes();
+        return null;
+    }
+
+    public List<ProduitDto> lireProduitBySousCategorie(long id) {
+        SousCategory Scategory = this.sousCategorieService.getCategory(id);
+        if (Scategory != null) {
+            List<ProduitDto> produitDtoList = new ArrayList<>();
+            List<Produit> produits = this.produitRepository.findAllBySousCategory(Scategory);
+            for (Produit produit : produits) {
+                List<FileInfo> fileInfos = new ArrayList<>();
+                List<String> fileInfoImages = new ArrayList<>();
+                ProduitDto produitDto = new ProduitDto();
+                produitDto.setId(produit.getId());
+                produitDto.setLibelle(produit.getLibelle());
+                produitDto.setQuantite(produit.getQuantite());
+                produitDto.setPrix(produit.getPrix());
+                produitDto.setDescription(produit.getDescription());
+                produitDto.setSousCategory(produit.getSousCategory());
+
+                fileInfos = produit.getFileInfo();
+                for (FileInfo fileInfo : fileInfos) {
+                    String imagePath = String.format("http://localhost:8080/admin/files/"+fileInfo.getName());
+                    fileInfoImages.add(imagePath);
+                }
+                produitDto.setImages(fileInfoImages);
+                produitDtoList.add(produitDto);
+            }
+            return produitDtoList;
+        }
         return null;
     }
 

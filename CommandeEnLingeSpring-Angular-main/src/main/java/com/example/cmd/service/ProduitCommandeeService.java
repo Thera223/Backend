@@ -16,6 +16,10 @@ public class ProduitCommandeeService {
         return this.produitCommandeeRepository.findAll();
     }
 
+    public ProduitCommandee getProduitCommandeeById(long id){
+        return this.produitCommandeeRepository.findById(id).orElse(null);
+    }
+
     public ProduitCommandee creer(ProduitCommandee produitCommandee){
         return this.produitCommandeeRepository.save(produitCommandee);
     }
