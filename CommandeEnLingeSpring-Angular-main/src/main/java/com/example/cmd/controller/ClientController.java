@@ -51,13 +51,29 @@ public class ClientController {
     @Autowired
     private CommandeService commandeService;
 
+    @Autowired
+    private RecuService recuService;
+
     public ClientController(ClientService clientService, AvisService avisService, PanierService panierService) {
         this.clientService = clientService;
         this.avisService = avisService;
         this.panierService = panierService;
     }
 
+    // Endpoint pour récupérer tous les reçus
+    @GetMapping("/recus")
+    public ResponseEntity<List<Recu>> getAllRecus() {
+        List<Recu> recus = recuService.recupererRecus();
+        return new ResponseEntity<>(recus, HttpStatus.OK);
+    }
 
+    // Endpoint pour récupérer un reçu par ID
+    @GetMapping("/recus/{id}")
+    public ResponseEntity<Recu> getRecuById(@PathVariable Long id) {
+        Optional<Recu> recu = recuService.recupererRecuParId(id);
+        return recu.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
 
 
     // Récupère la liste des avis associés à un produit spécifié
