@@ -318,4 +318,10 @@ public class ClientController {
         return ResponseEntity.ok(paiements);
     }
 
+    // Endpoint pour récupérer les produit dans le panier d'un client spécifique
+    @GetMapping("/produits/{clientId}")
+    public List<Produit> getProduitsDansPanier(@PathVariable Long clientId) {
+        return panierService.getAllProduitsInPanierForClient(clientId);
+    }
+
 }
