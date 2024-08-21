@@ -13,7 +13,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -53,6 +55,8 @@ public class ClientController {
 
     @Autowired
     private RecuService recuService;
+    @Autowired
+    private TypeLivraisonService typeLivraisonService;
 
     public ClientController(ClientService clientService, AvisService avisService, PanierService panierService) {
         this.clientService = clientService;
@@ -67,6 +71,10 @@ public class ClientController {
         return new ResponseEntity<>(recus, HttpStatus.OK);
     }
 
+    @GetMapping("/commande")
+    public ResponseEntity<List<Commande>> getCommandes(){
+        return new ResponseEntity<>(commandeService.getCommandes(), HttpStatus.OK);
+    }
     // Endpoint pour récupérer un reçu par ID
     @GetMapping("/recus/{id}")
     public ResponseEntity<Recu> getRecuById(@PathVariable Long id) {
@@ -100,7 +108,10 @@ public class ClientController {
         return "Votre compte est activé";
     }
 
-
+    @GetMapping("/TypeLivraison")
+    public ResponseEntity<List<TypeLivraison>> getTypeLivraison() {
+        return new ResponseEntity<>(typeLivraisonService.getAllTypeLivraisons(), HttpStatus.OK);
+    }
     @PostMapping("/{clientId}/change-password")
     public ResponseEntity<?> changePassword(@PathVariable Long clientId, @RequestBody ChangePasswordDto changePasswordDto) {
         try {
@@ -221,9 +232,13 @@ public class ClientController {
     }
 
     @PostMapping("/passerCommandeViaPanier/{id_panier}")
-    public ResponseEntity<String> passerCommandeViaPanier(@PathVariable Long id_panier) {
+    public ResponseEntity<Map<String, String>> passerCommandeViaPanier(@PathVariable Long id_panier) {
         this.commandeService.passerCommandeViaPanier(id_panier);
-        return new ResponseEntity<>("CommandeViaPanier", HttpStatus.OK);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "CommandeViaPanier");
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     // Endpoint pour obtenir tous les produits
@@ -257,6 +272,10 @@ public class ClientController {
 
         return new ResponseEntity<>(c, HttpStatus.CREATED);
     }
+    @GetMapping("/voirCommandes")
+    public List<Commande> voirCommandes() {
+        return this.commandeService.getCommandes();
+    }
 
 
     @PostMapping("/effectuerPayement")
@@ -274,6 +293,31 @@ public class ClientController {
         return new ResponseEntity<>(categoryService.getAllCategories(), HttpStatus.OK);
     }
 
+
+
+    // Endpoint pour récupérer les commandes d'un client spécifique
+    @GetMapping("/commandes/{clientId}")
+    public ResponseEntity<List<Commande>> getCommandesByClientId(@PathVariable Long clientId) {
+        List<Commande> commandes = commandeService.getCommandesByClientId(clientId);
+        if (commandes.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.ok(commandes);
+        }
+    }
+
+    // Endpoint pour récupérer les payements d'un client spécifique
+    @GetMapping("/paiements/client/{clientId}")
+    public ResponseEntity<List<Payement>> getPayementsByClient(@PathVariable Long clientId) {
+        List<Payement> paiements = payementService.getPayementsByClientId(clientId);
+        return ResponseEntity.ok(paiements);
+    }
+
+    @GetMapping("produit/{id}")
+    public ResponseEntity<Produit> getProduitById(@PathVariable Long id) {
+        Produit produit = produitService.getProduitById(id);
+        return ResponseEntity.ok(produit);
+    }
     @PostMapping("/ajouterLivraison/{commandeId}")
     @Transactional
     public ResponseEntity<String> ajouterLivraison(
@@ -313,29 +357,6 @@ public class ClientController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body("Livraison ajoutée et statut mis à jour à 'en_cours'.");
     }
-
-    // Endpoint pour récupérer les commandes d'un client spécifique
-    @GetMapping("/commandes/{clientId}")
-    public ResponseEntity<List<Commande>> getCommandesByClientId(@PathVariable Long clientId) {
-        List<Commande> commandes = commandeService.getCommandesByClientId(clientId);
-        if (commandes.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.ok(commandes);
-        }
-    }
-
-    // Endpoint pour récupérer les payements d'un client spécifique
-    @GetMapping("/paiements/client/{clientId}")
-    public ResponseEntity<List<Payement>> getPayementsByClient(@PathVariable Long clientId) {
-        List<Payement> paiements = payementService.getPayementsByClientId(clientId);
-        return ResponseEntity.ok(paiements);
-    }
-
-    @GetMapping("produit/{id}")
-    public ResponseEntity<Produit> getProduitById(@PathVariable Long id) {
-        Produit produit = produitService.getProduitById(id);
-        return ResponseEntity.ok(produit);
-    }
-
 }
+
+
