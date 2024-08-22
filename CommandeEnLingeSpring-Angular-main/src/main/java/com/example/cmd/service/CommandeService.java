@@ -69,15 +69,31 @@ public class CommandeService {
 
     @Transactional
     public Commande passerCommandeViaPanier(Long id_panier) {
+        // Récupérer le panier et vérifier son existence
         Panier panier = panierRepository.findById(id_panier)
                 .orElseThrow(() -> new IllegalArgumentException("Panier non trouvé avec id : " + id_panier));
+
+        // Récupérer les produits du panier
         List<ProduitCommandee> produits = panier.getProduits();
         if (produits.isEmpty()) {
             throw new RuntimeException("Ce panier ne contient aucun produit !!!");
         }
+
+        // Créer une nouvelle commande avec les produits
+        Commande commande = this.passerCommande(produits);
+
+        // Associer la commande au client du panier
+        commande.setClient(panier.getClient());
+
+        // Sauvegarder la commande avec le client associé
+        this.commandeRepository.save(commande);
+
+        // Vider le panier
         panier.setProduits(new ArrayList<>());
-        return this.passerCommande(produits);
+
+        return commande;
     }
+
 
     public Optional<Commande> findById(long id) {
         return this.commandeRepository.findById(id);

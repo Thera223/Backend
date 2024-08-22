@@ -230,6 +230,12 @@ public class ClientController {
         String resultat = panierService.payerProduitsDansPanier(panierId, montantClient);
         return new ResponseEntity<>(resultat, HttpStatus.OK);
     }
+    // Endpoint pour obtenir tous les produits
+    @GetMapping(path = "/listesProduit", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_JPEG_VALUE})
+    public List<ProduitDto> lireProduits() {
+        return produitService.lireProduits();
+    }
+
 
     @PostMapping("/passerCommandeViaPanier/{id_panier}")
     public ResponseEntity<Map<String, String>> passerCommandeViaPanier(@PathVariable Long id_panier) {
@@ -241,11 +247,6 @@ public class ClientController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    // Endpoint pour obtenir tous les produits
-    @GetMapping(path = "/listesProduit", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_JPEG_VALUE})
-    public List<ProduitDto> lireProduits() {
-        return produitService.lireProduits();
-    }
 
     @PostMapping("/passerCommande")
     public ResponseEntity<Commande> passerCommandes(
@@ -305,7 +306,12 @@ public class ClientController {
             return ResponseEntity.ok(commandes);
         }
     }
+    @GetMapping("/listeTypeLivraison")
 
+    public ResponseEntity<List<TypeLivraison>> getAllTypeLivraisons() {
+        List<TypeLivraison> typelivraisons = typeLivraisonService.getAllTypeLivraisons();
+        return ResponseEntity.ok(typelivraisons);
+    }
     // Endpoint pour récupérer les payements d'un client spécifique
     @GetMapping("/paiements/client/{clientId}")
     public ResponseEntity<List<Payement>> getPayementsByClient(@PathVariable Long clientId) {
@@ -357,6 +363,49 @@ public class ClientController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body("Livraison ajoutée et statut mis à jour à 'en_cours'.");
     }
+
+
+    @GetMapping("/{commandeId}/total")
+    public ResponseEntity<?> getTotalCommande(@PathVariable Long commandeId) {
+        Commande commande = commandeService.getCommande(commandeId);
+
+        if (commande == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Commande non trouvée");
+        }
+
+        // Récupérer le total de la commande avec la livraison
+        float totalAvecLivraison = commande.getTotalAvecLivraison();
+
+        // Récupérer le coût de la livraison séparément si nécessaire
+        double coutLivraison = 0;
+        if (commande.getLivraison() != null) {
+            coutLivraison = commande.getLivraison().getTypeLivraison().getPrix();
+        }
+
+        // Renvoyer le total et le coût de livraison
+        return ResponseEntity.ok(new TotalCommandeResponse(totalAvecLivraison, coutLivraison));
+    }
+
+    // Classe interne pour structurer la réponse JSON
+    public static class TotalCommandeResponse {
+        private float totalCommande;
+        private double coutLivraison;
+
+        public TotalCommandeResponse(float totalCommande, double coutLivraison) {
+            this.totalCommande = totalCommande;
+            this.coutLivraison = coutLivraison;
+        }
+
+        // Getters
+        public float getTotalCommande() {
+            return totalCommande;
+        }
+
+        public double getCoutLivraison() {
+            return coutLivraison;
+        }
+    }
 }
+
 
 

@@ -26,8 +26,7 @@ public class PayementService {
     public Payement effectuerPayement(Commande commande) {
         Commande commande1 = this.commandeService.getCommande(commande.getId());
 
-        // Créer des sortis
-        System.out.println("Créer des sortis");
+        // Logique pour gérer les sorties de stock
         List<ProduitCommandee> produitCommandeeList = commande1.getProduitCommandees();
         for (ProduitCommandee pCommandee : produitCommandeeList) {
             EntreeSorti es = new EntreeSorti();
@@ -37,23 +36,27 @@ public class PayementService {
             es.setQuantite(pCommandee.getQuantite());
             this.entreeSortiService.creer(es);
         }
-        // Retirer quantité de chaque produit dans le stock
-        commande1.getProduitCommandees().forEach(produitCommandee -> this.stockService.retirerProduit(produitCommandee.getProduit(), produitCommandee.getQuantite()));
+
+        commande1.getProduitCommandees().forEach(produitCommandee ->
+                this.stockService.retirerProduit(produitCommandee.getProduit(), produitCommandee.getQuantite())
+        );
+
+        // Calculer le montant total, incluant les coûts de livraison
+        float totalAvecLivraison = commande1.getTotalAvecLivraison();
 
         Payement payement = new Payement();
         payement.setCommande(commande1);
-        Facture facture = this.factureRepository.findByCommande(commande1);
-        if (facture == null) {
-            throw new RuntimeException("facture non trouvable");
-        }
-        payement.setMontant(facture.getTotal());
+        payement.setMontant(totalAvecLivraison);
+
         Payement payementSaved = this.payementRepository.save(payement);
         Recu recu = new Recu();
         recu.setPayement(payementSaved);
-        recu.setTotal(facture.getTotal());
+        recu.setTotal(totalAvecLivraison);
         this.recuRepository.save(recu);
+
         return payementSaved;
     }
+
 
     public List<Payement> recupererPayements() {
         return this.payementRepository.findAll();

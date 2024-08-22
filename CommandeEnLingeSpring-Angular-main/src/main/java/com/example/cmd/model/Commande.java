@@ -1,5 +1,6 @@
 package com.example.cmd.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -31,4 +32,32 @@ public class Commande {
     @ManyToOne
     @JoinColumn(name = "id_client")
     private Client client;
+    @OneToOne(mappedBy = "commande", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private Livraison livraison;
+
+    // Getters et setters
+    public Livraison getLivraison() {
+        return livraison;
+    }
+
+    public void setLivraison(Livraison livraison) {
+        this.livraison = livraison;
+    }
+
+    public float getTotalAvecLivraison() {
+        float totalCommande = this.getProduitCommandees().stream()
+                .map(pc -> pc.getProduit().getPrix() * pc.getQuantite())
+                .reduce(0f, Float::sum);
+
+        if (livraison != null) {
+            return (float) (totalCommande + livraison.getTypeLivraison().getPrix());
+        } else {
+            return totalCommande;
+        }
+    }
+
+
+
+
 }
