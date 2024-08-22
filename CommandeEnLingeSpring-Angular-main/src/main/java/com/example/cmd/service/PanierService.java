@@ -126,4 +126,19 @@ public class PanierService {
                 .findFirst()
                 .orElse(null).getProduit();
     }
+
+    public List<Produit> getAllProduitsInPanierForClient(Long clientId) {
+        // Récupérer le panier du client à partir de son ID
+        Panier panier = panierRepository.findByClient_Id(clientId);
+
+        // Si le panier n'existe pas, lancer une exception
+        if (panier == null) {
+            throw new RuntimeException("Panier non trouvé pour le client avec ID : " + clientId);
+        }
+
+        // Retourner la liste des produits dans le panier
+        return panier.getProduits();
+    }
+
+
 }
