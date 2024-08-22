@@ -1,21 +1,57 @@
 package com.example.cmd.config;
 
-import com.example.cmd.model.Client;
+import com.example.cmd.model.Utilisateur;
+import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+
 import java.util.Collection;
 
 
-public class CustomUserPrincipal extends User {
+public class CustomUserPrincipal implements UserDetails {
 
-    private final Client client;
+    @Getter
+    private final Utilisateur utilisateur;
+    private final Collection<? extends GrantedAuthority> authorities;
 
-    public CustomUserPrincipal(String username, String password, Collection<? extends GrantedAuthority> authorities, Client client) {
-        super(username, password, authorities);
-        this.client = client;
+    public CustomUserPrincipal(Utilisateur utilisateur, Collection<? extends GrantedAuthority> authorities) {
+        this.utilisateur = utilisateur;
+        this.authorities = authorities;
     }
 
-    public Client getClient() {
-        return client;
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return authorities;
     }
+
+    @Override
+    public String getPassword() {
+        return utilisateur.getMotDePasse();
+    }
+
+    @Override
+    public String getUsername() {
+        return utilisateur.getUsername();
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+
 }

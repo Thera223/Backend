@@ -36,6 +36,9 @@ import java.util.*;
 @CrossOrigin(origins = "http://localhost:8100")
 public class AdminController {
 
+
+
+
     private PasswordEncoder passwordEncoder;
 
     @Autowired

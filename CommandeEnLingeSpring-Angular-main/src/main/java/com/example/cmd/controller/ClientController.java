@@ -149,8 +149,8 @@ public class ClientController {
             Object principal = authentication.getPrincipal();
             if (principal instanceof CustomUserPrincipal) {
                 CustomUserPrincipal customPrincipal = (CustomUserPrincipal) principal;
-                if (customPrincipal.getClient() != null) {
-                    return customPrincipal.getClient().getId();
+                if (customPrincipal.getUtilisateur() != null) {
+                    return customPrincipal.getUtilisateur().getId();
                 } else {
                     throw new IllegalArgumentException("Authenticated user is not a client");
                 }
