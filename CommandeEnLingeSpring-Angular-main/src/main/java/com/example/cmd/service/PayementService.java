@@ -21,9 +21,11 @@ public class PayementService {
     private FactureRepository factureRepository;
     private StockServiceImpl stockService;
     private EntreeSortiServiceImp entreeSortiService;
+    private CommandeService commandeRepository;
 
     @Transactional
     public Payement effectuerPayement(Commande commande) {
+
         Commande commande1 = this.commandeService.getCommande(commande.getId());
 
         // Créer des sortis
@@ -42,6 +44,7 @@ public class PayementService {
 
         Payement payement = new Payement();
         payement.setCommande(commande1);
+
         Facture facture = this.factureRepository.findByCommande(commande1);
         if (facture == null) {
             throw new RuntimeException("facture non trouvable");
